@@ -137,7 +137,12 @@ def main():
                 row, col = get_square(mouse_pos)
                 print(chess_board[row][col])
                 if selected_square is None:
-                    selected_square = (row, col)
+                    if gs.white_to_play is True and chess_board[row][col].isupper():
+                        selected_square = (row, col)
+                    elif gs.white_to_play is False and not chess_board[row][col].isupper():
+                        selected_square = (row, col)
+                    else:
+                        continue
                 else:
                     if is_valid_pawn_move(chess_board, selected_square, (row,col)):
                         move(row, col, selected_square, chess_board)
@@ -146,7 +151,7 @@ def main():
                         print(gs.white_to_play)
                     else:
                         selected_square = None
-                        
+
 
             
 
