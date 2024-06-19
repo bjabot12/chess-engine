@@ -146,6 +146,7 @@ def main():
                         print(gs.white_to_play)
                     else:
                         selected_square = None
+                        
 
             
 
