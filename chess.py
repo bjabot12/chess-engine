@@ -181,10 +181,6 @@ def main():
                     else:
                         selected_square = None
 
-
-            
-
-        
         screen.fill((255, 255, 255))
         draw_board(chess_board)
         if selected_square:
@@ -193,10 +189,15 @@ def main():
             s.fill((SELECTED_COLOR))           # this fills the entire surface
             screen.blit(s, (selected_square[1] * SQUARE_SIZE, selected_square[0] * SQUARE_SIZE))
         
-        
-
         pygame.display.flip()
         clock.tick(60)
 
+def test_valid_moves():
+        gs = GameState()
+        chess_board = gs.getBoard()
+        for row in chess_board:
+            for piece in row:
+                print(piece)
+
 if __name__ == "__main__":
-    main()
+    test_valid_moves()
