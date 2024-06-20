@@ -43,8 +43,9 @@ class Piece:
 
 
 def move(row, col, selected_square, board):
-        board[row][col] = board[selected_square[0]][selected_square[1]]
-        board[selected_square[0]][selected_square[1]] = ' '
+    board[row][col] = board[selected_square[0]][selected_square[1]]
+    board[selected_square[0]][selected_square[1]] = ' '
+    return board
 
 
 class GameState:
@@ -68,6 +69,33 @@ class GameState:
     def change_turn(self):
         self.white_to_play = not self.white_to_play
 
+def is_valid_move(piece, board, start_pos, end_pos):
+    print("hei " + piece.lower())
+    if piece.lower() == "p":
+        return is_valid_pawn_move(board, start_pos, end_pos)
+    elif piece.lower() == "b":
+        return is_valid_bishop_move(board, start_pos, end_pos)
+
+def is_valid_bishop_move(board, start_pos, end_pos):
+    start_row, start_col = start_pos
+    end_row, end_col = end_pos
+
+    # Check if the start and end positions are on the same diagonal
+    if abs(start_row - end_row) != abs(start_col - end_col):
+        return False
+
+    # Check if the bishop's path is clear (no pieces in between)
+    row_dir = 1 if end_row > start_row else -1
+    col_dir = 1 if end_col > start_col else -1
+    check_row, check_col = start_row + row_dir, start_col + col_dir
+    while check_row != end_row and check_col != end_col:
+        if board[check_row][check_col] != ' ':
+            return False
+        check_row += row_dir
+        check_col += col_dir
+
+    return True
+
 def is_valid_pawn_move(board, start_pos, end_pos):
     start_row, start_col = start_pos
     end_row, end_col = end_pos
@@ -76,26 +104,27 @@ def is_valid_pawn_move(board, start_pos, end_pos):
     if end_row < 0 or end_row > 7 or end_col < 0 or end_col > 7:
         return False
 
-    # Check if the end position is empty
-    if board[end_row][end_col] != ' ':
-        return False
+    # # Check if the end position is empty
+    # if board[end_row][end_col] != ' ':
+    #     return False
 
     # White pawn moves
     if board[start_row][start_col] == 'P':
-        if start_col == end_col and end_row == start_row - 1:
+        if start_col == end_col and end_row == start_row - 1 and board[end_row][end_col] == ' ':
             return True
         elif start_row == 6 and start_col == end_col and end_row == start_row - 2 and board[start_row - 1][start_col] == ' ':
             return True
-        elif abs(start_col - end_col) == 1 and end_row == start_row - 1:
+        elif abs(start_col - end_col) == 1 and end_row == start_row - 1 and board[end_row][end_col].islower():
             return True
 
     # Black pawn moves
     elif board[start_row][start_col] == 'p':
-        if start_col == end_col and end_row == start_row + 1:
+        if start_col == end_col and end_row == start_row + 1 and board[end_row][end_col] == ' ':
             return True
         elif start_row == 1 and start_col == end_col and end_row == start_row + 2 and board[start_row + 1][start_col] == ' ':
             return True
-        elif abs(start_col - end_col) == 1 and end_row == start_row + 1:
+        
+        elif abs(start_col - end_col) == 1 and end_row == start_row + 1 and board[end_row][end_col].isupper():
             return True
 
     return False
@@ -137,32 +166,34 @@ def main():
                 row, col = get_square(mouse_pos)
                 print(chess_board[row][col])
                 if selected_square is None:
+                    # Checks to see who's turn it is
                     if gs.white_to_play is True and chess_board[row][col].isupper():
                         selected_square = (row, col)
-                    elif gs.white_to_play is False and not chess_board[row][col].isupper():
+                    elif gs.white_to_play is False and chess_board[row][col].islower():
                         selected_square = (row, col)
                     else:
                         continue
                 else:
-                    if is_valid_pawn_move(chess_board, selected_square, (row,col)):
-                        move(row, col, selected_square, chess_board)
+                    if is_valid_move(chess_board[selected_square[0]][selected_square[1]], chess_board, selected_square, (row,col)):
+                        chess_board = move(row, col, selected_square, chess_board)
                         selected_square = None
                         gs.change_turn()
-                        print(gs.white_to_play)
                     else:
                         selected_square = None
 
 
             
 
+        
         screen.fill((255, 255, 255))
         draw_board(chess_board)
-
         if selected_square:
             s = pygame.Surface((SQUARE_SIZE,SQUARE_SIZE))  # the size of your rect
             s.set_alpha(80)                # alpha level
             s.fill((SELECTED_COLOR))           # this fills the entire surface
             screen.blit(s, (selected_square[1] * SQUARE_SIZE, selected_square[0] * SQUARE_SIZE))
+        
+        
 
         pygame.display.flip()
         clock.tick(60)
