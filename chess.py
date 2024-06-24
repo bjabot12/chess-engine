@@ -69,12 +69,16 @@ class GameState:
     def change_turn(self):
         self.white_to_play = not self.white_to_play
 
+
 def is_valid_move(piece, board, start_pos, end_pos):
     print("hei " + piece.lower())
     if piece.lower() == "p":
         return is_valid_pawn_move(board, start_pos, end_pos)
     elif piece.lower() == "b":
         return is_valid_bishop_move(board, start_pos, end_pos)
+    elif piece.lower() == "r":
+        return is_valid_rook_move(board, start_pos, end_pos)
+    
 
 def is_valid_bishop_move(board, start_pos, end_pos):
     start_row, start_col = start_pos
@@ -93,6 +97,30 @@ def is_valid_bishop_move(board, start_pos, end_pos):
             return False
         check_row += row_dir
         check_col += col_dir
+
+    return True
+
+def is_valid_rook_move(board, start_pos, end_pos):
+    start_row, start_col = start_pos
+    end_row, end_col = end_pos
+
+    # Check if the start and end positions are in the same row or column
+    if start_row != end_row and start_col != end_col:
+        return False
+
+    # Check if the rook's path is clear (no pieces in between)
+    if start_row == end_row:
+        # Moving horizontally
+        step = 1 if end_col > start_col else -1
+        for col in range(start_col + step, end_col, step):
+            if board[start_row][col] != ' ':
+                return False
+    else:
+        # Moving vertically
+        step = 1 if end_row > start_row else -1
+        for row in range(start_row + step, end_row, step):
+            if board[row][start_col] != ' ':
+                return False
 
     return True
 
@@ -200,4 +228,5 @@ def test_valid_moves():
                 print(piece)
 
 if __name__ == "__main__":
-    test_valid_moves()
+    # test_valid_moves()
+    main()
