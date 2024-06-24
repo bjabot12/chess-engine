@@ -78,6 +78,8 @@ def is_valid_move(piece, board, start_pos, end_pos):
         return is_valid_bishop_move(board, start_pos, end_pos)
     elif piece.lower() == "r":
         return is_valid_rook_move(board, start_pos, end_pos)
+    elif piece.lower() == "n":
+        return is_valid_knight_move(board, start_pos, end_pos)
     
 
 def is_valid_bishop_move(board, start_pos, end_pos):
@@ -123,6 +125,27 @@ def is_valid_rook_move(board, start_pos, end_pos):
                 return False
 
     return True
+
+
+def is_valid_knight_move(board, start_pos, end_pos):
+    start_row, start_col = start_pos
+    end_row, end_col = end_pos
+
+    # Check if the move is in an L-shape pattern (2 squares in one direction, 1 square perpendicular)
+    row_move = abs(start_row - end_row)
+    col_move = abs(start_col - end_col)
+
+    if (row_move == 2 and col_move == 1) or (row_move == 1 and col_move == 2):
+        # Check if the end position is within the board bounds
+        if end_row < 0 or end_row > 7 or end_col < 0 or end_col > 7:
+            return False
+
+        # Check if the end position is empty or has an opponent's piece
+        if board[end_row][end_col] == ' ' or board[end_row][end_col].islower() != board[start_row][start_col].islower():
+            return True
+
+    return False
+
 
 def is_valid_pawn_move(board, start_pos, end_pos):
     start_row, start_col = start_pos
