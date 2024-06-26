@@ -80,6 +80,10 @@ def is_valid_move(piece, board, start_pos, end_pos):
         return is_valid_rook_move(board, start_pos, end_pos)
     elif piece.lower() == "n":
         return is_valid_knight_move(board, start_pos, end_pos)
+    elif piece.lower() == "q":
+        return is_valid_queen_move(board, start_pos, end_pos)
+    elif piece.lower() == "k":
+        return is_valid_king_move(board, start_pos, end_pos)
     
 
 def is_valid_bishop_move(board, start_pos, end_pos):
@@ -100,7 +104,9 @@ def is_valid_bishop_move(board, start_pos, end_pos):
         check_row += row_dir
         check_col += col_dir
 
-    return True
+    if board[end_row][end_col] == ' ' or board[end_row][end_col].islower() != board[start_row][start_col].islower():
+            return True
+    return False
 
 def is_valid_rook_move(board, start_pos, end_pos):
     start_row, start_col = start_pos
@@ -124,7 +130,10 @@ def is_valid_rook_move(board, start_pos, end_pos):
             if board[row][start_col] != ' ':
                 return False
 
-    return True
+
+    if board[end_row][end_col] == ' ' or board[end_row][end_col].islower() != board[start_row][start_col].islower():
+            return True
+    return False
 
 
 def is_valid_knight_move(board, start_pos, end_pos):
@@ -180,6 +189,68 @@ def is_valid_pawn_move(board, start_pos, end_pos):
 
     return False
 
+def is_valid_queen_move(board, start_pos, end_pos):
+    start_row, start_col = start_pos
+    end_row, end_col = end_pos
+
+    # Check if it's a valid rook move (vertical or horizontal)
+    if start_row == end_row or start_col == end_col:
+        return is_valid_rook_move(board, start_pos, end_pos)
+
+    # Check if it's a valid bishop move (diagonal)
+    row_move = abs(start_row - end_row)
+    col_move = abs(start_col - end_col)
+    if row_move == col_move:
+        return is_valid_bishop_move(board, start_pos, end_pos)
+
+    return False
+
+def is_valid_king_move(board, start_pos, end_pos):
+    start_row, start_col = start_pos
+    end_row, end_col = end_pos
+
+    # Check if the move is within one square in any direction
+    row_move = abs(start_row - end_row)
+    col_move = abs(start_col - end_col)
+
+    if row_move <= 1 and col_move <= 1:
+        # Check if the end position is within the board bounds
+        if end_row < 0 or end_row > 7 or end_col < 0 or end_col > 7:
+            return False
+
+        # Check if the end position is either empty or has an opponent's piece
+        if board[end_row][end_col] == ' ' or board[end_row][end_col].islower() != board[start_row][start_col].islower():
+            return True
+
+    return False
+
+
+def is_king_in_check(board, king_pos, king_color):
+    king_row, king_col = king_pos
+    
+    # Check for opponent's pieces threatening the king
+    for row in range(8):
+        for col in range(8):
+            piece = board[row][col]
+            if piece != ' ' and piece.islower() != king_color:
+                if piece.lower() == 'p':
+                    target_positions = [(row-1, col-1), (row-1, col+1)] if piece.islower() else [(row+1, col-1), (row+1, col+1)]
+                    for target_row, target_col in target_positions:
+                        if target_row == king_row and target_col == king_col:
+                            print("check")
+                            return True
+                elif piece.lower() == 'n':
+                    knight_moves = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
+                    for dr, dc in knight_moves:
+                        if row + dr == king_row and col + dc == king_col:
+                            print("check")
+                            return True
+                else:
+                    if is_valid_move(board, (row, col), king_pos):
+                        print("check")
+                        return True
+
+    return False
 
 # Functions
 def draw_board(chess_board):
