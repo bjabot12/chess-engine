@@ -71,7 +71,7 @@ class GameState:
 
 
 def is_valid_move(piece, board, start_pos, end_pos):
-    print("hei " + piece.lower())
+    # print("hei " + piece.lower())
     if piece.lower() == "p":
         return is_valid_pawn_move(board, start_pos, end_pos)
     elif piece.lower() == "b":
@@ -314,6 +314,25 @@ def main():
         pygame.display.flip()
         clock.tick(60)
 
+
+def find_valid_moves():
+    gs = GameState()
+    chess_board = gs.getBoard()
+
+    i = 0
+
+    for start_row, row in enumerate(chess_board):
+        for start_col, col in enumerate(row):
+            print(str(col))
+            if col != "":
+                for end_row in range(8):
+                    for end_col in range(8):
+                        if is_valid_move(col, chess_board, (start_row, start_col), (end_row, end_col)):
+                            i = i + 1
+    print(i)
+                    
+
+
 def test_valid_moves():
         gs = GameState()
         chess_board = gs.getBoard()
@@ -323,4 +342,5 @@ def test_valid_moves():
 
 if __name__ == "__main__":
     # test_valid_moves()
-    main()
+    # main()
+    find_valid_moves()
