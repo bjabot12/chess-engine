@@ -19,6 +19,8 @@ SELECTED_COLOR = (200, 0, 0)
 screen = pygame.display.set_mode((WIDTH+200, HEIGHT))
 pygame.display.set_caption("Chess")
 
+button_rect = pygame.Rect(1100, 100, 150, 50)
+
 # Load chess piece images
 pieces = {
     'r': pygame.image.load('images/bR.png'),
@@ -68,7 +70,22 @@ class GameState:
     
     def change_turn(self):
         self.white_to_play = not self.white_to_play
+    
+    def reset_board(self):
+        self.board = [
+                    "rnbqkbnr",
+                    "pppppppp",
+                    "        ",
+                    "        ",
+                    "        ",
+                    "        ",
+                    "PPPPPPPP",
+                    "RNBQKBNR"
+                ]
+        self.chess_board = [list(row) for row in self.board]
+        self.white_to_play = True
 
+               
 
 def is_valid_move(piece, board, start_pos, end_pos):
     # print("hei " + piece.lower())
@@ -268,6 +285,13 @@ def get_square(mouse_pos):
     col = mouse_pos[0] // SQUARE_SIZE
     return row, col
 
+def draw_button(text):
+    color = (50, 90, 140)
+    pygame.draw.rect(screen, color, button_rect)
+    text_surf = font.render(text, True, WHITE)
+    text_rect = text_surf.get_rect(center=button_rect.center)
+    screen.blit(text_surf, text_rect)
+
 def main():
 
     clock = pygame.time.Clock()
@@ -286,6 +310,7 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
                 row, col = get_square(mouse_pos)
+                hovered = button_rect.collidepoint(mouse_pos)
                 print(chess_board[row][col])
                 if selected_square is None:
                     # Checks to see who's turn it is
@@ -302,7 +327,6 @@ def main():
                         gs.change_turn()
                     else:
                         selected_square = None
-
         screen.fill((255, 255, 255))
         draw_board(chess_board)
         if selected_square:
@@ -311,6 +335,7 @@ def main():
             s.fill((SELECTED_COLOR))           # this fills the entire surface
             screen.blit(s, (selected_square[1] * SQUARE_SIZE, selected_square[0] * SQUARE_SIZE))
         
+        pygame.draw.rect(screen, (70, 130, 180), button_rect)
         pygame.display.flip()
         clock.tick(60)
 
@@ -318,18 +343,39 @@ def main():
 def find_valid_moves():
     gs = GameState()
     chess_board = gs.getBoard()
-
+    clock = pygame.time.Clock()
     i = 0
 
     for start_row, row in enumerate(chess_board):
         for start_col, col in enumerate(row):
             print(str(col))
-            if col != "":
+            if col != " ":
+
                 for end_row in range(8):
                     for end_col in range(8):
                         if is_valid_move(col, chess_board, (start_row, start_col), (end_row, end_col)):
-                            i = i + 1
-    print(i)
+                            chess_board = move(end_row, end_col, (start_row, start_col), chess_board)
+                            print("valid move")
+                            
+                            # Handle events
+                            for event in pygame.event.get():
+                                if event.type == pygame.QUIT:
+                                    pygame.quit()
+                                    sys.exit()
+                            
+                            # Draw and update display
+                            screen.fill((255, 255, 255))
+                            draw_board(chess_board)
+                            pygame.display.flip()
+                            pygame.time.wait(1000)
+                            
+                            # Control frame rate
+                            clock.tick(5)  # Limit to 5 frames per second
+                            
+                            i += 1
+                            gs.reset_board()
+                            chess_board = gs.getBoard()
+    print(f"Total valid moves found: {i}")
                     
 
 
