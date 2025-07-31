@@ -16,7 +16,7 @@ SELECTED_COLOR = (200, 0, 0)
 
 
 # Pygame setup
-screen = pygame.display.set_mode((WIDTH+200, HEIGHT))
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chess")
 
 button_rect = pygame.Rect(1100, 100, 150, 50)
@@ -52,7 +52,7 @@ def move(row, col, selected_square, board):
 
 class GameState:
     def __init__(self):
-        self.board = [
+        board = [
             "rnbqkbnr",
             "pppppppp",
             "        ",
@@ -62,7 +62,7 @@ class GameState:
             "PPPPPPPP",
             "RNBQKBNR"
         ]
-        self.chess_board = [list(row) for row in self.board]
+        self.chess_board = [list(row) for row in board]
         self.white_to_play = True
 
     def getBoard(self):
@@ -72,7 +72,7 @@ class GameState:
         self.white_to_play = not self.white_to_play
     
     def reset_board(self):
-        self.board = [
+        board = [
                     "rnbqkbnr",
                     "pppppppp",
                     "        ",
@@ -82,7 +82,7 @@ class GameState:
                     "PPPPPPPP",
                     "RNBQKBNR"
                 ]
-        self.chess_board = [list(row) for row in self.board]
+        self.chess_board = [list(row) for row in board]
         self.white_to_play = True
 
                
@@ -168,6 +168,9 @@ def is_valid_knight_move(board, start_pos, end_pos):
 
         # Check if the end position is empty or has an opponent's piece
         if board[end_row][end_col] == ' ' or board[end_row][end_col].islower() != board[start_row][start_col].islower():
+            print("HHHEEER!!!")
+            print(start_pos, end_pos)
+            print(board[end_row][end_col])
             return True
 
     return False
@@ -345,11 +348,13 @@ def find_valid_moves():
     chess_board = gs.getBoard()
     clock = pygame.time.Clock()
     i = 0
+    
+    cs1 = chess_board
 
-    for start_row, row in enumerate(chess_board):
+    for start_row, row in enumerate(cs1):
         for start_col, col in enumerate(row):
             print(str(col))
-            if col != " ":
+            if col != " " and col != "P" and col != "p":
 
                 for end_row in range(8):
                     for end_col in range(8):
