@@ -9,19 +9,21 @@ pygame.init()
 WIDTH, HEIGHT = 1020, 1020
 BOARD_SIZE = 8
 SQUARE_SIZE = WIDTH // BOARD_SIZE
+PANEL_WIDTH = 300  # Width for the left panel
 
 # Colors
 WHITE = (255, 255, 221)
 BLACK = (134, 166, 102)
 SELECTED_COLOR = (200, 0, 0)
-
+PANEL_COLOR = (240, 240, 240)
+TEXT_COLOR = (50, 50, 50)
 
 # Pygame setup
-screen = pygame.display.set_mode((WIDTH+300, HEIGHT))
+screen = pygame.display.set_mode((WIDTH + PANEL_WIDTH + 250, HEIGHT))
 pygame.display.set_caption("Chess")
 
-button_rect = pygame.Rect(1100, 100, 150, 50)
-random_move_button = pygame.Rect(1100, 200, 150, 50)
+button_rect = pygame.Rect(WIDTH + PANEL_WIDTH + 50, 100, 150, 50)
+random_move_button = pygame.Rect(WIDTH + PANEL_WIDTH + 50, 200, 150, 50)
 
 # Load chess piece images
 pieces = {
@@ -44,13 +46,28 @@ class Piece:
         self.notation = notation
         self.value = value
 
+def get_square_notation(row, col):
+    """Convert board coordinates to chess notation"""
+    files = 'abcdefgh'
+    ranks = '87654321'
+    return files[col] + ranks[row]
 
+def get_piece_notation(piece):
+    """Convert piece to chess notation"""
+    piece_map = {
+        'P': '', 'p': '',
+        'R': 'R', 'r': 'R',
+        'N': 'N', 'n': 'N',
+        'B': 'B', 'b': 'B',
+        'Q': 'Q', 'q': 'Q',
+        'K': 'K', 'k': 'K'
+    }
+    return piece_map.get(piece, '')
 
 def move(row, col, selected_square, board):
     board[row][col] = board[selected_square[0]][selected_square[1]]
     board[selected_square[0]][selected_square[1]] = ' '
     return board
-
 
 class GameState:
     def __init__(self):
@@ -66,12 +83,38 @@ class GameState:
         ]
         self.chess_board = [list(row) for row in board]
         self.white_to_play = True
+        self.move_history = []  # List to store move history
+        self.move_number = 1
 
     def getBoard(self):
         return self.chess_board
     
     def change_turn(self):
         self.white_to_play = not self.white_to_play
+    
+    def add_move(self, start_pos, end_pos, piece):
+        """Add a move to the history"""
+        start_row, start_col = start_pos
+        end_row, end_col = end_pos
+        
+        # Create move notation
+        piece_notation = get_piece_notation(piece)
+        start_square = get_square_notation(start_row, start_col)
+        end_square = get_square_notation(end_row, end_col)
+        
+        move_text = f"{piece_notation}{start_square}-{end_square}"
+        
+        if self.white_to_play:  # White just moved, so this is white's move
+            if len(self.move_history) % 2 == 0:  # New move pair
+                self.move_history.append(f"{self.move_number}. {move_text}")
+                self.move_number += 1
+            else:  # Black's move in the same pair
+                self.move_history[-1] += f" {move_text}"
+        else:  # Black just moved
+            if len(self.move_history) % 2 == 1:  # White's move in the same pair
+                self.move_history.append(f"{self.move_number}. {move_text}")
+            else:  # Black's move in the same pair
+                self.move_history[-1] += f" {move_text}"
     
     def reset_board(self):
         board = [
@@ -86,6 +129,8 @@ class GameState:
                 ]
         self.chess_board = [list(row) for row in board]
         self.white_to_play = True
+        self.move_history = []
+        self.move_number = 1
 
                
 
@@ -290,7 +335,7 @@ def find_all_legal_moves_for_black(board):
     
     return legal_moves
 
-def make_random_black_move(board):
+def make_random_black_move(board, gs):
     """Make a random legal move for black"""
     legal_moves = find_all_legal_moves_for_black(board)
     
@@ -299,6 +344,10 @@ def make_random_black_move(board):
         start_pos, end_pos = random.choice(legal_moves)
         start_row, start_col = start_pos
         end_row, end_col = end_pos
+        
+        # Record the move before making it
+        piece = board[start_row][start_col]
+        gs.add_move(start_pos, end_pos, piece)
         
         # Make the move
         board[end_row][end_col] = board[start_row][start_col]
@@ -316,11 +365,44 @@ def draw_board(chess_board):
             piece = chess_board[row][col]
             if piece != ' ':
                 screen.blit(pieces[piece], (col * SQUARE_SIZE, row * SQUARE_SIZE))
+
+def draw_move_history_panel(gs):
+    """Draw the move history panel on the left side"""
+    # Draw panel background
+    panel_rect = pygame.Rect(0, 0, PANEL_WIDTH, HEIGHT)
+    pygame.draw.rect(screen, PANEL_COLOR, panel_rect)
     
+    # Draw panel border
+    pygame.draw.rect(screen, (200, 200, 200), panel_rect, 2)
+    
+    # Draw title
+    font = pygame.font.Font(None, 36)
+    title_text = font.render("Move History", True, TEXT_COLOR)
+    title_rect = title_text.get_rect(center=(PANEL_WIDTH // 2, 30))
+    screen.blit(title_text, title_rect)
+    
+    # Draw move history
+    font_small = pygame.font.Font(None, 24)
+    y_offset = 80
+    
+    for i, move_text in enumerate(gs.move_history):
+        if y_offset > HEIGHT - 100:  # Don't draw if it would go off screen
+            break
+        
+        text_surface = font_small.render(move_text, True, TEXT_COLOR)
+        screen.blit(text_surface, (20, y_offset))
+        y_offset += 30
+    
+    # Draw current turn indicator
+    turn_text = "White's Turn" if gs.white_to_play else "Black's Turn"
+    turn_color = (0, 100, 0) if gs.white_to_play else (100, 0, 0)
+    turn_surface = font.render(turn_text, True, turn_color)
+    turn_rect = turn_surface.get_rect(center=(PANEL_WIDTH // 2, HEIGHT - 50))
+    screen.blit(turn_surface, turn_rect)
 
 def get_square(mouse_pos):
     row = mouse_pos[1] // SQUARE_SIZE
-    col = mouse_pos[0] // SQUARE_SIZE
+    col = (mouse_pos[0] - PANEL_WIDTH) // SQUARE_SIZE  # Adjust for panel width
     return row, col
 
 def draw_button(text):
@@ -347,57 +429,84 @@ def main():
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
-                row, col = get_square(mouse_pos)
-                hovered = button_rect.collidepoint(mouse_pos)
-                random_button_hovered = random_move_button.collidepoint(mouse_pos)
                 
-                # Handle random move button click
-                if random_button_hovered and not gs.white_to_play:
-                    if make_random_black_move(chess_board):
-                        gs.change_turn()
-                        print("Black made a random move!")
-                    else:
-                        print("No legal moves available for black!")
-                    continue
-                
-                # Handle reset button click
-                if hovered:
-                    gs.reset_board()
-                    chess_board = gs.getBoard()
-                    selected_square = None
-                    print("Board reset to initial position!")
-                    continue
-                
-                # Handle board clicks
-                if 0 <= row < 8 and 0 <= col < 8:
-                    print(chess_board[row][col])
-                    if selected_square is None:
-                        # Checks to see who's turn it is
-                        if gs.white_to_play is True and chess_board[row][col].isupper():
-                            selected_square = (row, col)
-                        elif gs.white_to_play is False and chess_board[row][col].islower():
-                            selected_square = (row, col)
-                        else:
-                            continue
-                    else:
-                        if is_valid_move(chess_board[selected_square[0]][selected_square[1]], chess_board, selected_square, (row,col)):
-                            chess_board = move(row, col, selected_square, chess_board)
-                            selected_square = None
+                # Check if click is on the board (not on the panel)
+                if mouse_pos[0] >= PANEL_WIDTH:
+                    row, col = get_square(mouse_pos)
+                    hovered = button_rect.collidepoint(mouse_pos)
+                    random_button_hovered = random_move_button.collidepoint(mouse_pos)
+                    
+                    # Handle random move button click
+                    if random_button_hovered and not gs.white_to_play:
+                        if make_random_black_move(chess_board, gs):
                             gs.change_turn()
+                            print("Black made a random move!")
                         else:
-                            selected_square = None
+                            print("No legal moves available for black!")
+                        continue
+                    
+                    # Handle reset button click
+                    if hovered:
+                        gs.reset_board()
+                        chess_board = gs.getBoard()
+                        selected_square = None
+                        print("Board reset to initial position!")
+                        continue
+                    
+                    # Handle board clicks
+                    if 0 <= row < 8 and 0 <= col < 8:
+                        print(chess_board[row][col])
+                        if selected_square is None:
+                            # Checks to see who's turn it is
+                            if gs.white_to_play is True and chess_board[row][col].isupper():
+                                selected_square = (row, col)
+                            elif gs.white_to_play is False and chess_board[row][col].islower():
+                                selected_square = (row, col)
+                            else:
+                                continue
+                        else:
+                            if is_valid_move(chess_board[selected_square[0]][selected_square[1]], chess_board, selected_square, (row,col)):
+                                # Record the move before making it
+                                piece = chess_board[selected_square[0]][selected_square[1]]
+                                gs.add_move(selected_square, (row, col), piece)
+                                
+                                chess_board = move(row, col, selected_square, chess_board)
+                                selected_square = None
+                                gs.change_turn()
+                            else:
+                                selected_square = None
         
         screen.fill((255, 255, 255))
-        draw_board(chess_board)
+        
+        # Draw the board shifted to the right to make room for the panel
+        board_surface = pygame.Surface((WIDTH, HEIGHT))
+        board_surface.fill((255, 255, 255))
+        
+        # Draw board on the surface
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                color = WHITE if (row + col) % 2 == 0 else BLACK
+                pygame.draw.rect(board_surface, color, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+                piece = chess_board[row][col]
+                if piece != ' ':
+                    board_surface.blit(pieces[piece], (col * SQUARE_SIZE, row * SQUARE_SIZE))
+        
+        # Draw selected square highlight
         if selected_square:
-            s = pygame.Surface((SQUARE_SIZE,SQUARE_SIZE))  # the size of your rect
-            s.set_alpha(80)                # alpha level
-            s.fill((SELECTED_COLOR))           # this fills the entire surface
-            screen.blit(s, (selected_square[1] * SQUARE_SIZE, selected_square[0] * SQUARE_SIZE))
+            s = pygame.Surface((SQUARE_SIZE,SQUARE_SIZE))
+            s.set_alpha(80)
+            s.fill((SELECTED_COLOR))
+            board_surface.blit(s, (selected_square[1] * SQUARE_SIZE, selected_square[0] * SQUARE_SIZE))
+        
+        # Draw the board surface on the screen
+        screen.blit(board_surface, (PANEL_WIDTH, 0))
+        
+        # Draw move history panel
+        draw_move_history_panel(gs)
         
         # Draw buttons
-        pygame.draw.rect(screen, (70, 130, 180), button_rect)
-        pygame.draw.rect(screen, (180, 70, 130), random_move_button)
+        pygame.draw.rect(screen, (0, 0, 0), button_rect)
+        pygame.draw.rect(screen, (0, 0, 0), random_move_button)
         
         # Draw button text
         font = pygame.font.Font(None, 36)
@@ -464,5 +573,5 @@ def test_valid_moves():
 
 if __name__ == "__main__":
     # test_valid_moves()
-    # main()
-    find_valid_moves()
+    main()
+    # find_valid_moves()
