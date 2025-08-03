@@ -384,14 +384,19 @@ def draw_move_history_panel(gs):
     # Draw move history
     font_small = pygame.font.Font(None, 24)
     y_offset = 80
+    x_offset = 40
     
     for i, move_text in enumerate(gs.move_history):
         if y_offset > HEIGHT - 100:  # Don't draw if it would go off screen
             break
         
         text_surface = font_small.render(move_text, True, TEXT_COLOR)
-        screen.blit(text_surface, (20, y_offset))
-        y_offset += 30
+        screen.blit(text_surface, (x_offset, y_offset))
+        if i % 2:
+            y_offset += 30
+            x_offset = 40
+        else:
+            x_offset = 100
     
     # Draw current turn indicator
     turn_text = "White's Turn" if gs.white_to_play else "Black's Turn"
@@ -421,15 +426,20 @@ def main():
     chess_board = gs.getBoard()
 
     print(chess_board[0][0])
-
-    while True:
+    running = True
+    while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            elif pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+                running = False        #should be used 
+                pygame.quit()
+                    
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
-                
+
                 # Check if click is on the board (not on the panel)
                 if mouse_pos[0] >= PANEL_WIDTH:
                     row, col = get_square(mouse_pos)
